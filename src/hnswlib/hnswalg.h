@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unordered_set>
 #include <list>
+#include <sstream>
 
 namespace hnswlib {
 typedef unsigned int tableint;
@@ -596,10 +597,8 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
 
-    void saveIndex(const std::string &location) {
-        std::ofstream output(location, std::ios::binary);
-        std::streampos position;
-
+    std::vector<char> saveIndexToBuffer() {
+        std::stringstream output;
         writeBinaryPOD(output, offsetLevel0_);
         writeBinaryPOD(output, max_elements_);
         writeBinaryPOD(output, cur_element_count);
@@ -609,29 +608,25 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         writeBinaryPOD(output, maxlevel_);
         writeBinaryPOD(output, enterpoint_node_);
         writeBinaryPOD(output, maxM_);
-
         writeBinaryPOD(output, maxM0_);
         writeBinaryPOD(output, M_);
         writeBinaryPOD(output, mult_);
         writeBinaryPOD(output, ef_construction_);
-
         output.write(data_level0_memory_, cur_element_count * size_data_per_element_);
-
         for (size_t i = 0; i < cur_element_count; i++) {
             unsigned int linkListSize = element_levels_[i] > 0 ? size_links_per_element_ * element_levels_[i] : 0;
             writeBinaryPOD(output, linkListSize);
             if (linkListSize)
                 output.write(linkLists_[i], linkListSize);
         }
-        output.close();
+        std::string str = output.str();
+        return std::vector<char>(str.begin(), str.end());
     }
 
 
-    void loadIndex(const std::string &location, SpaceInterface<dist_t> *s, size_t max_elements_i = 0) {
-        std::ifstream input(location, std::ios::binary);
-
-        if (!input.is_open())
-            throw std::runtime_error("Cannot open file");
+    void loadIndexFromBuffer(const std::vector<char>& buffer, SpaceInterface<dist_t> *s) {
+        std::stringstream input;
+        input.write(buffer.data(), buffer.size());
 
         // get file size:
         input.seekg(0, input.end);
@@ -642,10 +637,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         readBinaryPOD(input, max_elements_);
         readBinaryPOD(input, cur_element_count);
 
-        size_t max_elements = max_elements_i;
-        if (max_elements < cur_element_count)
-            max_elements = max_elements_;
-        max_elements_ = max_elements;
+        size_t max_elements = max_elements_;
         readBinaryPOD(input, size_data_per_element_);
         readBinaryPOD(input, label_offset_);
         readBinaryPOD(input, offsetData_);
@@ -728,8 +720,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 if (allow_replace_deleted_) deleted_elements.insert(i);
             }
         }
-
-        input.close();
 
         return;
     }

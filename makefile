@@ -11,13 +11,11 @@ CFLAGS += -s WASM=1
 CFLAGS += -s MODULARIZE=1
 CFLAGS += -s EXPORT_NAME='hnswlib'
 CFLAGS += -s ASSERTIONS=1
-CFLAGS += -s DEMANGLE_SUPPORT=1
 CFLAGS += -s SINGLE_FILE
 
 CFLAGS += --bind
 CFLAGS += -s ENVIRONMENT=web
 CFLAGS += -gsource-map
-CFLAGS += -lidbfs.js
 
 
 
@@ -62,6 +60,7 @@ rebuild: clean all
 copy_and_comment: $(wildcard $(SRC_DIR)/*.ts)
 	@cp $^ $(LIB_DIR)
 	@for f in $(LIB_DIR)/*.ts; do \
+	    sed -i "s|'./hnswlib-wasm.mjs'|'./hnswlib.mjs'|g" $$f; \
 	    echo "$(MY_COMMENT)" | cat - $$f > tmpfile && mv tmpfile $$f; \
 			echo " " >> $$f; \
 	    echo "$(MY_COMMENT)" >> $$f; \

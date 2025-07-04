@@ -31,10 +31,6 @@ export default defineConfig({
           src: './lib/hnswlib.wasm.map',
           dest: './',
         },
-        {
-          src: './lib/hnswlib-wasm.d.ts',
-          dest: './',
-        },
       ],
     }),
     tsconfigPaths(),

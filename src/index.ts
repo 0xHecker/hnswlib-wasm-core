@@ -4,114 +4,31 @@ import type factory from './hnswlib-wasm';
 
 export type HierarchicalNSW = module.HierarchicalNSW;
 export type BruteforceSearch = module.BruteforceSearch;
-export type EmscriptenFileSystemManager = module.EmscriptenFileSystemManager;
 export type L2Space = module.L2Space;
 export type InnerProductSpace = module.InnerProductSpace;
 
 export type HnswModuleFactory = typeof factory;
 export type normalizePoint = HnswlibModule['normalizePoint'];
-export const IDBFS_STORE_NAME = 'FILE_DATA';
 
 export * from './constants';
 
-export interface HnswlibModule extends Omit<EmscriptenModule, '_malloc' | '_free'> {
+export interface HnswlibModule extends EmscriptenModule {
   normalizePoint(vec: number[]): number[];
-  L2Space: typeof module.L2Space;
-  InnerProductSpace: typeof module.InnerProductSpace;
-  BruteforceSearch: typeof module.BruteforceSearch;
-  HierarchicalNSW: typeof module.HierarchicalNSW;
-  EmscriptenFileSystemManager: typeof module.EmscriptenFileSystemManager;
-  asm: {
-    malloc(size: number): number;
-    free(ptr: number): void;
+  L2Space: new (dim: number) => module.L2Space;
+  InnerProductSpace: new (dim: number) => module.InnerProductSpace;
+  BruteforceSearch: new (space: 'l2' | 'ip' | 'cosine', dim: number) => module.BruteforceSearch;
+  HierarchicalNSW: new (space: 'l2' | 'ip' | 'cosine', dim: number) => module.HierarchicalNSW & {
+    readIndexFromBuffer: (buffer: Uint8Array) => void;
+    writeIndexToBuffer: () => Uint8Array;
   };
 }
 
-let library: Awaited<HnswlibModule>;
-type InputFsType = 'IDBFS' | undefined;
-
-export const syncFileSystem = (action: 'read' | 'write'): Promise<void> => {
-  const EmscriptenFileSystemManager: HnswlibModule['EmscriptenFileSystemManager'] = library.EmscriptenFileSystemManager;
-
-  const syncAction = action === 'read' ? true : action === 'write' ? false : undefined;
-  if (syncAction === undefined) throw new Error('Invalid action type');
-
-  return new Promise((resolve, reject) => {
-    try {
-      EmscriptenFileSystemManager.syncFS(syncAction, () => {
-        resolve();
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
-};
-
-export const waitForFileSystemInitalized = (): Promise<void> => {
-  const EmscriptenFileSystemManager: HnswlibModule['EmscriptenFileSystemManager'] = library.EmscriptenFileSystemManager;
-  return new Promise((resolve, reject) => {
-    let totalWaitTime = 0;
-    const checkInterval = 100; // Check every 100ms
-    const maxWaitTime = 4000; // Maximum wait time of 4 seconds
-
-    const checkInitialization = () => {
-      if (EmscriptenFileSystemManager.isInitialized()) {
-        resolve();
-      } else if (totalWaitTime >= maxWaitTime) {
-        reject(new Error('Failed to initialize filesystem'));
-      } else {
-        totalWaitTime += checkInterval;
-        setTimeout(checkInitialization, checkInterval);
-      }
-    };
-
-    setTimeout(checkInitialization, checkInterval);
-  });
-};
-
-export const waitForFileSystemSynced = (): Promise<void> => {
-  const EmscriptenFileSystemManager = library.EmscriptenFileSystemManager;
-  return new Promise((resolve, reject) => {
-    let totalWaitTime = 0;
-    const checkInterval = 100; // Check every 100ms
-    const maxWaitTime = 4000; // Maximum wait time of 4 seconds
-
-    const checkInitialization = () => {
-      if (EmscriptenFileSystemManager.isSynced()) {
-        resolve();
-      } else if (totalWaitTime >= maxWaitTime) {
-        reject(new Error('Failed to initialize filesystem'));
-      } else {
-        totalWaitTime += checkInterval;
-        setTimeout(checkInitialization, checkInterval);
-      }
-    };
-
-    setTimeout(checkInitialization, checkInterval);
-  });
-};
-
-/**
- * Initializes the file system for the HNSW library using the specified file system type.
- * If no file system type is specified, IDBFS is used by default.
- * @param inputFsType The type of file system to use. Can be 'IDBFS' or undefined.
- * @returns A promise that resolves when the file system is initialized, or rejects if initialization fails.
- */
-const initializeFileSystemAsync = async (inputFsType?: InputFsType): Promise<void> => {
-  const fsType = inputFsType == null ? 'IDBFS' : inputFsType;
-  const EmscriptenFileSystemManager = library.EmscriptenFileSystemManager;
-
-  if (EmscriptenFileSystemManager.isInitialized()) {
-    return;
-  }
-  EmscriptenFileSystemManager.initializeFileSystem(fsType);
-  return await waitForFileSystemInitalized();
-};
+let library: HnswlibModule;
 
 /**
  * Load the HNSW library in node or browser
  */
-export const loadHnswlib = async (inputFsType?: InputFsType): Promise<HnswlibModule> => {
+export const loadHnswlib = async (): Promise<HnswlibModule> => {
   try {
     // @ts-expect-error - hnswlib can be a global variable in the browser
     if (typeof hnswlib !== 'undefined' && hnswlib !== null) {
@@ -121,14 +38,8 @@ export const loadHnswlib = async (inputFsType?: InputFsType): Promise<HnswlibMod
     }
 
     if (!library) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const temp = await import('./hnswlib.mjs');
-      const factoryFunc = temp.default;
-
-      library = await factoryFunc();
-      await initializeFileSystemAsync(inputFsType);
-      return library; // Add this line
+      const factoryFunc = (await import('./hnswlib.mjs')).default;
+      library = (await factoryFunc()) as HnswlibModule;
     }
     return library;
   } catch (err) {

@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <fstream>
+#include <sstream>
 #include <mutex>
 #include <algorithm>
 #include <assert.h>
@@ -129,24 +130,20 @@ class BruteforceSearch : public AlgorithmInterface<dist_t> {
     }
 
 
-    void saveIndex(const std::string &location) {
-        std::ofstream output(location, std::ios::binary);
-        std::streampos position;
-
+    std::vector<char> saveIndexToBuffer() {
+        std::stringstream output;
         writeBinaryPOD(output, maxelements_);
         writeBinaryPOD(output, size_per_element_);
         writeBinaryPOD(output, cur_element_count);
-
         output.write(data_, maxelements_ * size_per_element_);
-
-        output.close();
+        std::string str = output.str();
+        return std::vector<char>(str.begin(), str.end());
     }
 
 
-    void loadIndex(const std::string &location, SpaceInterface<dist_t> *s) {
-        std::ifstream input(location, std::ios::binary);
-        std::streampos position;
-
+    void loadIndexFromBuffer(const std::vector<char>& buffer, SpaceInterface<dist_t> *s) {
+        std::stringstream input;
+        input.write(buffer.data(), buffer.size());
         readBinaryPOD(input, maxelements_);
         readBinaryPOD(input, size_per_element_);
         readBinaryPOD(input, cur_element_count);
@@ -160,8 +157,6 @@ class BruteforceSearch : public AlgorithmInterface<dist_t> {
             throw std::runtime_error("Not enough memory: loadIndex failed to allocate data");
 
         input.read(data_, maxelements_ * size_per_element_);
-
-        input.close();
     }
 };
 }  // namespace hnswlib

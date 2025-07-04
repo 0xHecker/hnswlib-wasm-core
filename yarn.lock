@@ -2680,9 +2680,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hnswlib-wasm@workspace:.":
+"hnswlib-wasm-core@workspace:.":
   version: 0.0.0-use.local
-  resolution: "hnswlib-wasm@workspace:."
+  resolution: "hnswlib-wasm-core@workspace:."
   dependencies:
     "@rollup/plugin-node-resolve": ^15.1.0
     "@types/emscripten": ^1.39.6

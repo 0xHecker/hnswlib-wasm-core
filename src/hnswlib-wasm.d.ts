@@ -125,15 +125,15 @@ export class BruteforceSearch {
    */
   initIndex(maxElements: number): void;
   /**
-   * loads the search index.
-   * @param {string} filename The filename to read from.
+   * loads the search index from an ArrayBuffer.
+   * @param {ArrayBuffer} buffer The buffer to read from.
    */
-  readIndex(filename: string): Promise<boolean>;
+  readIndexFromBuffer(buffer: ArrayBuffer): void;
   /**
-   * saves the search index.
-   * @param {string} filename The filename to save to.
+   * saves the search index to an ArrayBuffer.
+   * @return {ArrayBuffer} The buffer containing the index data.
    */
-  writeIndex(filename: string): Promise<boolean>;
+  writeIndexToBuffer(): ArrayBuffer;
   /**
    * adds a datum point to the search index.
    * @param {Float32Array | number[]} point The datum point to be added to the search index.
@@ -213,15 +213,15 @@ export class HierarchicalNSW {
   isIndexInitialized(): boolean;
 
   /**
-   * loads the search index.
-   * @param {string} filename The filename to read from.
+   * loads the search index from an ArrayBuffer.
+   * @param {ArrayBuffer} buffer The buffer to read from.
    */
-  readIndex(filename: string, maxElements: number): Promise<boolean>;
+  readIndexFromBuffer(buffer: ArrayBuffer): void;
   /**
-   * saves the search index.
-   * @param {string} filename The filename to save to.
+   * saves the search index to an ArrayBuffer.
+   * @return {ArrayBuffer} The buffer containing the index data.
    */
-  writeIndex(filename: string): Promise<boolean>;
+  writeIndexToBuffer(): ArrayBuffer;
 
   /**
    * resizes the search index.
@@ -334,20 +334,6 @@ export class HierarchicalNSW {
   setEfSearch(ef: number): void;
 }
 
-export class EmscriptenFileSystemManager {
-  constructor();
-  static initializeFileSystem(fsType: 'IDBFS'): void;
-  static isInitialized(): boolean;
-  static isSynced(): boolean;
-  static setDebugLogs(enable: boolean): void;
-  static checkFileExists(filename: string): boolean;
-  /**
-   * Syncs the Emscripten file system with the persistent storage IDBFS
-   * @param read read (bool) – true to initialize Emscripten’s file system data with the data from the file system’s persistent source, and false to save Emscripten`s file system data to the file system’s persistent source.
-   * @param callback
-   */
-  static syncFS(read: boolean, callback: () => void): Promise<boolean>;
-}
 
 declare const factory: EmscriptenModuleFactory<HnswlibModule>;
 export default factory;

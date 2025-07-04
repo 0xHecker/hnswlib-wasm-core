@@ -1,13 +1,13 @@
 {
-  "name": "hnswlib-wasm",
+  "name": "hnswlib-wasm-core",
   "version": "0.8.2",
-  "description": "typescript and wasm bindings for Hnswlib",
+  "description": "typescript and wasm bindings for Hnswlib with storage agnostic",
   "module": "./dist/hnswlib.js",
   "types": "./dist/hnswlib.d.ts",
   "type": "module",
   "repository": "https://github.com/shravansunder/hnswlib-wasm",
   "homepage": "https://github.com/shravansunder/hnswlib-wasm",
-  "author": "Shravan Sunder<shravan.sunder.dev@gmail.com>",
+  "author": "Sai Shanmukh<msshanmukh@gmail.com>",
   "license": "Apache-2.0",
   "keywords": [
     "hnswlib",
@@ -15,7 +15,6 @@
     "machine learning",
     "wasm",
     "typescript",
-    "emscripten",
     "embeddings"
   ],
   "scripts": {
