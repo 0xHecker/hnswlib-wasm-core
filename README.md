@@ -1,56 +1,79 @@
-# hnswlib-wasm
+# hnswlib-wasm-core
 
-This is a WebAssembly (Wasm) version of the [hnswlib](https://github.com/nmslib/hnswlib) index library written in C++. This Wasm port was created by @ShravanSunder using the emcc Wasm compiler, see the repository [here](https://github.com/shravansunder/hnswlib-wasm).
+This is a WebAssembly (Wasm) version of the [hnswlib](https://github.com/nmslib/hnswlib) index library written in C++. This Wasm port was originally created by @ShravanSunder and has been modified by @0xHecker to be storage-agnostic.
 
 Inspired by the library [hnswlib-node](https://github.com/yoshoku/hnswlib-node/). @yoshoku has provided some wonderful [documentation](https://yoshoku.github.io/hnswlib-node/doc/) for hnswlib-node. Thanks, @yoshoku!
 
-> Note: This library is still in its early days! It is being built for a use case that requires running hnswlib in the browser.
+`hnswlib-wasm-core` provides wasm bindings for [Hnswlib](https://github.com/nmslib/hnswlib) that implements approximate nearest-neighbor search based on hierarchical navigable small world graphs. It works in browsers and is compiled with Emscripten.
 
-`hnswlib-wasm` provides wasm bindings for [Hnswlib](https://github.com/nmslib/hnswlib) that implements approximate nearest-neighbor search based on hierarchical navigable small world graphs. It works in browsers and is compiled with Emscripten.
+## What this solves
+
+The original `hnswlib-wasm` had a hard dependency on Emscripten's file system (IDBFS) for persistence. This made it difficult to use other storage mechanisms and added unnecessary complexity.
+
+`hnswlib-wasm-core` solves this by decoupling the core HNSW logic from the persistence layer. It exposes methods to serialize the index to and from an `ArrayBuffer`, allowing you to use any storage backend you prefer, such as the Origin Private File System (OPFS), IndexedDB, or even a remote server.
 
 ## Installation
 
 ```sh
-$ yarn add hnswlib-wasm
+$ npm i hnswlib-wasm-core
 ```
 
-See the npm package [here](https://www.npmjs.com/package/hnswlib-wasm).
+See the npm package [here](https://www.npmjs.com/package/hnswlib-wasm-core).
 
 ## Documentation
 
-* [hnswlib-node API Documentation](https://yoshoku.github.io/hnswlib-node/doc/) by @yoshoku for hnswlib-node provides an accurate description of the API. The TypeScript definitions of the API have been modified to work with Wasm. The documentation will be updated as the library progresses, and more examples will be added.
-* The major differences are in loading and saving the index. It supports `indexedDB` (in browser) and uses FS from Emscripten to save and load the index via the virtual file system and IDBFS.
-* See the changelog from `hnswlib-node` for more details by @yoshoku [changelog](./CHANGELOG.md).
+* [hnswlib-node API Documentation](https://yoshoku.github.io/hnswlib-node/doc/) by @yoshoku for hnswlib-node provides an accurate description of the API. The TypeScript definitions of the API have been modified to work with Wasm.
 
 ### Usage
 
 First, create a runtime instance of the library:
 
 ```ts
-import { loadHnswlib } from 'hnswlib-wasm';
+import { loadHnswlib } from 'hnswlib-wasm-core';
 
 const lib = await loadHnswlib();
 ```
 
-Here is a full example of loading a index if it exists or creating a new index if it doesn't exist:
+Here is a full example of loading a index if it exists from the Origin Private File System (OPFS), or creating a new index if it doesn't exist:
 
 ```ts
-  const filename = 'ghost.dat';
-  const { loadHnswlib } = await import('hnswlib-wasm');
-  this.hnswlib = await loadHnswlib();
-  this.hnswlib.EmscriptenFileSystemManager.setDebugLogs(true);
-  this.vectorHnswIndex = new this.hnswlib.HierarchicalNSW('cosine', 1536);
-  await syncFileSystem('read');
+import { loadHnswlib, HierarchicalNSW } from 'hnswlib-wasm-core';
 
-  const exists = this.hnswlib.EmscriptenFileSystemManager.checkFileExists(filename);
-  if (!exists) {
-    this.vectorHnswIndex.initIndex(100000, 48, 128, 100);
-    this.vectorHnswIndex.setEfSearch(32);
-    this.vectorHnswIndex.writeIndex('ghost.dat');
-  } else {
-    this.vectorHnswIndex.readIndex(filename, 100000, true);
-    this.vectorHnswIndex.setEfSearch(32);
+const INDEX_FILE_NAME = 'hnswlib-index.bin';
+
+const saveIndexToOpfs = async (index: HierarchicalNSW) => {
+  const buffer = index.writeIndexToBuffer();
+  const root = await navigator.storage.getDirectory();
+  const fileHandle = await root.getFileHandle(INDEX_FILE_NAME, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(buffer);
+  await writable.close();
+};
+
+const loadIndexFromOpfs = async (index: HierarchicalNSW, maxElements: number) => {
+  const root = await navigator.storage.getDirectory();
+  try {
+    const fileHandle = await root.getFileHandle(INDEX_FILE_NAME);
+    const file = await fileHandle.getFile();
+    const buffer = await file.arrayBuffer();
+    index.readIndexFromBuffer(new Uint8Array(buffer));
+  } catch (error) {
+    if (error instanceof Error && error.name === 'NotFoundError') {
+      // Index file doesn't exist, so we'll just initialize a new index.
+      index.initIndex(maxElements);
+    } else {
+      throw error;
+    }
   }
+};
+
+const lib = await loadHnswlib();
+const index = new lib.HierarchicalNSW('cosine', 1536);
+await loadIndexFromOpfs(index, 100000);
+
+// Now you can use the index
+index.addItems(vectors, true);
+await saveIndexToOpfs(index);
 ```
 
 
@@ -84,33 +107,27 @@ More usage examples to be added.
 
 > For now, see the `HierarchicalNSW.test.ts` file in the tests folder and refer to the [hnswlib-node API Documentation](https://yoshoku.github.io/hnswlib-node/doc/).
 
-## Extended IndexedDB (IDBFS) Support
+## Persistence with ArrayBuffers
 
-The `hnswlib-wasm` library provides extended support for IndexedDB (IDBFS) to store and manage the search index in the browser. This allows you to save and load the search index easily in a web environment and you don't have to move data from the emcc file system to javascript memory.  It uses the FS from Emscripten to save and load the index via the virtual file system.  The virtual file system is synchronized with IDBFS.
+The `hnswlib-wasm-core` library is storage-agnostic. It provides a flexible approach by allowing you to serialize the index to and from an `ArrayBuffer`. This means you can use any storage mechanism you choose. The recommended approach for modern browsers is the Origin Private File System (OPFS), which provides fast, file-based storage.
 
+### Saving and Loading the Search Index
 
-#### Saving and Loading the Search Index with IDBFS
-
-To save the search index, use the `writeIndex` method:
-
-```ts
-await index.writeIndex('savedIndex');
-```
-
-To load a previously saved search index, use the `readIndex` method:
+To save the search index, use the `writeIndexToBuffer` method, which returns an `ArrayBuffer`:
 
 ```ts
-await index.readIndex('savedIndex', false);
+const buffer = index.writeIndexToBuffer();
+// Now you can save the buffer to your preferred storage
 ```
 
-#### Synchronizing the Emscripten File System with IDBFS
-
-The `syncFs` method is used to synchronize the Emscripten file system with the persistent storage IDBFS. You can use this method to save or read data from the file system's persistent source.
+To load a previously saved search index, use the `readIndexFromBuffer` method, which takes an `ArrayBuffer`:
 
 ```ts
-await lib.EmscriptenFileSystemManager.syncFS(true, emscripten::val::undefined()); // Read data from the persistent source
-await lib.EmscriptenFileSystemManager.syncFS(false, emscripten::val::undefined()); // Save data to the persistent source
+// Load the buffer from your preferred storage
+index.readIndexFromBuffer(buffer);
 ```
+
+Helper functions for using OPFS are provided in the `opfs-io.ts` file and demonstrated in the usage example above.
 
 
 ## HNSW Algorithm Parameters for hnswlib-wasm
@@ -160,7 +177,7 @@ Images from [pinecone.io](https://www.pinecone.io/learn/hnsw/)
 # Other Notes
 ## License
 
-hnswlib-wasm is available as open source under the terms of the [Apache-2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
+hnswlib-wasm-core is available as open source under the terms of the [Apache-2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Contributing
 
@@ -177,4 +194,4 @@ yarn test
 ```
 
 
-Contact @ShravanSunder first!
+Contact @0xHecker first!
