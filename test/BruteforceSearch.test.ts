@@ -1,6 +1,11 @@
 import { BruteforceSearch, HnswlibModule, loadHnswlib } from '~lib/index';
 import { testErrors } from '~test/testHelpers';
 
+const arrayToVector = (arr: number[], vector: any) => {
+  arr.forEach((x) => vector.push_back(x));
+  return vector;
+};
+
 describe('BruteforceSearch', () => {
   let hnswlib: HnswlibModule;
   let index: BruteforceSearch;
@@ -56,14 +61,14 @@ describe('BruteforceSearch', () => {
       expect(() => {
         // @ts-expect-error for testing
         index.initIndex();
-      }).toThrow(testErrors.arugmentCount);
+      }).toThrow('function BruteforceSearch.initIndex called with 0 arguments, expected 1');
     });
 
     it('throws an error if given a non-Number argument', () => {
       expect(() => {
         // @ts-expect-error for testing
         index.initIndex('5', 16, 200, 1, 1);
-      }).toThrow(testErrors.arugmentCount);
+      }).toThrow('function BruteforceSearch.initIndex called with 5 arguments, expected 1');
     });
 
     it('initIndex it is true if initialized with defaults', () => {
@@ -98,8 +103,12 @@ describe('BruteforceSearch', () => {
 
     it('returns current number of elements', () => {
       index.initIndex(5);
-      index.addPoint([1, 2, 3], 0);
-      index.addPoint([2, 3, 4], 1);
+      const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+      index.addPoint(vec1, 0);
+      vec1.delete();
+      const vec2 = arrayToVector([2, 3, 4], new hnswlib.VectorFloat());
+      index.addPoint(vec2, 1);
+      vec2.delete();
       expect(index.getCurrentCount()).toBe(2);
     });
   });
@@ -123,28 +132,36 @@ describe('BruteforceSearch', () => {
       expect(() => {
         // @ts-expect-error for testing
         index.addPoint('[1, 2, 3]', 0);
-      }).toThrow(testErrors.vectorArgument);
+      }).toThrow('Cannot pass "[1, 2, 3]" as a VectorFloat');
     });
 
     it('throws an error if called before the index is initialized', () => {
+      const vec = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
       expect(() => {
-        index.addPoint([1, 2, 3], 0);
+        index.addPoint(vec, 0);
       }).toThrow('Search index has not been initialized, call `initIndex` in advance.');
+      vec.delete();
     });
 
     it('throws an error if given an array with a length different from the number of dimensions', () => {
       index.initIndex(1);
+      const vec = arrayToVector([1, 2, 3, 4, 5], new hnswlib.VectorFloat());
       expect(() => {
-        index.addPoint([1, 2, 3, 4, 5], 0);
+        index.addPoint(vec, 0);
       }).toThrow(testErrors.vectorSize);
+      vec.delete();
     });
 
     it('throws an error if more element is added than the maximum number of elements.', () => {
       index.initIndex(1);
-      index.addPoint([1, 2, 3], 0);
+      const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+      index.addPoint(vec1, 0);
+      vec1.delete();
+      const vec2 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
       expect(() => {
-        index.addPoint([1, 2, 3], 1);
+        index.addPoint(vec2, 1);
       }).toThrow(testErrors.indexSize);
+      vec2.delete();
     });
   });
 
@@ -168,12 +185,18 @@ describe('BruteforceSearch', () => {
 
     it('removes the element specified by index', () => {
       index.initIndex(2);
-      index.addPoint([1, 2, 3], 0);
-      index.addPoint([1, 2, 4], 1);
+      const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+      index.addPoint(vec1, 0);
+      vec1.delete();
+      const vec2 = arrayToVector([1, 2, 4], new hnswlib.VectorFloat());
+      index.addPoint(vec2, 1);
+      vec2.delete();
       expect(index.getCurrentCount()).toBe(2);
       index.removePoint(1);
       expect(index.getCurrentCount()).toBe(1);
-      expect(index.searchKnn([1, 2, 4], 1, undefined).neighbors).toEqual([0]);
+      const vec3 = arrayToVector([1, 2, 4], new hnswlib.VectorFloat());
+      expect(index.searchKnn(vec3, 1, undefined).neighbors).toEqual([0]);
+      vec3.delete();
     });
   });
 
@@ -185,51 +208,65 @@ describe('BruteforceSearch', () => {
 
       beforeAll(() => {
         index.initIndex(3);
-        index.addPoint([1, 2, 3], 0);
-        index.addPoint([2, 3, 4], 1);
-        index.addPoint([3, 4, 5], 2);
+        const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+        index.addPoint(vec1, 0);
+        vec1.delete();
+        const vec2 = arrayToVector([2, 3, 4], new hnswlib.VectorFloat());
+        index.addPoint(vec2, 1);
+        vec2.delete();
+        const vec3 = arrayToVector([3, 4, 5], new hnswlib.VectorFloat());
+        index.addPoint(vec3, 2);
+        vec3.delete();
       });
 
       it('throws an error if no arguments are given', () => {
         expect(() => {
           // @ts-expect-error for testing
           index.searchKnn();
-        }).toThrow(testErrors.arugmentCount);
+        }).toThrow('function BruteforceSearch.searchKnn called with 0 arguments, expected 3');
       });
 
       it('throws an error if given a non-Array object to first argument', () => {
         expect(() => {
           // @ts-expect-error for testing
           index.searchKnn('[1, 2, 3]', 2);
-        }).toThrow(testErrors.arugmentCount);
+        }).toThrow('function BruteforceSearch.searchKnn called with 2 arguments, expected 3');
       });
 
       it('throws an error if given a non-Function object to third argument', () => {
+        const vec = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
         expect(() => {
           // @ts-expect-error for testing
-          index.searchKnn([1, 2, 3], 2, 'fnc');
-        }).toThrow(testErrors.isNotFunction);
+          index.searchKnn(vec, 2, 'fnc');
+        }).toThrow('Cannot read properties of undefined (reading \'call\')');
+        vec.delete();
       });
 
       it('throws an error if given the number of neighborhoods exceeding the maximum number of elements', () => {
+        const vec = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
         expect(() => {
-          index.searchKnn([1, 2, 5], 4, undefined);
+          index.searchKnn(vec, 4, undefined);
         }).toThrow(
           'Invalid the number of k-nearest neighbors (cannot be given a value greater than `maxElements`: 3).'
         );
+        vec.delete();
       });
 
       it('throws an error if given an array with a length different from the number of dimensions', () => {
+        const vec = arrayToVector([1, 2, 5, 4], new hnswlib.VectorFloat());
         expect(() => {
-          index.searchKnn([1, 2, 5, 4], 2, undefined);
+          index.searchKnn(vec, 2, undefined);
         }).toThrow('Invalid the given array length (expected 3, but got 4).');
+        vec.delete();
       });
 
       it('returns search results based on squared Euclidean distance', () => {
-        expect(index.searchKnn([1, 2, 5], 2, undefined)).toMatchObject({
+        const vec = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
+        expect(index.searchKnn(vec, 2, undefined)).toMatchObject({
           distances: [3, 4],
           neighbors: [1, 0],
         });
+        vec.delete();
       });
     });
 
@@ -240,16 +277,24 @@ describe('BruteforceSearch', () => {
 
       beforeAll(() => {
         index.initIndex(3);
-        index.addPoint([1, 2, 3], 0);
-        index.addPoint([2, 3, 4], 1);
-        index.addPoint([3, 4, 5], 2);
+        const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+        index.addPoint(vec1, 0);
+        vec1.delete();
+        const vec2 = arrayToVector([2, 3, 4], new hnswlib.VectorFloat());
+        index.addPoint(vec2, 1);
+        vec2.delete();
+        const vec3 = arrayToVector([3, 4, 5], new hnswlib.VectorFloat());
+        index.addPoint(vec3, 2);
+        vec3.delete();
       });
 
       it('returns search results based on one minus inner product', () => {
-        expect(index.searchKnn([1, 2, 5], 2, undefined)).toMatchObject({
+        const vec = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
+        expect(index.searchKnn(vec, 2, undefined)).toMatchObject({
           distances: [-35, -27],
           neighbors: [2, 1],
         });
+        vec.delete();
       });
     });
 
@@ -260,13 +305,21 @@ describe('BruteforceSearch', () => {
 
       beforeAll(() => {
         index.initIndex(3);
-        index.addPoint([1, 2, 3], 0);
-        index.addPoint([2, 3, 4], 1);
-        index.addPoint([3, 4, 5], 2);
+        const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+        index.addPoint(vec1, 0);
+        vec1.delete();
+        const vec2 = arrayToVector([2, 3, 4], new hnswlib.VectorFloat());
+        index.addPoint(vec2, 1);
+        vec2.delete();
+        const vec3 = arrayToVector([3, 4, 5], new hnswlib.VectorFloat());
+        index.addPoint(vec3, 2);
+        vec3.delete();
       });
 
       it('returns search results based on one minus cosine similarity', () => {
-        const result = index.searchKnn([1, 2, 5], 2, undefined);
+        const vec = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
+        const result = index.searchKnn(vec, 2, undefined);
+        vec.delete();
         expect(result.neighbors).toMatchObject([0, 1]);
         expect(result.distances[0]).toBeCloseTo(1.0 - 20.0 / (Math.sqrt(14) * Math.sqrt(30)), 6);
         expect(result.distances[1]).toBeCloseTo(1.0 - 28.0 / (Math.sqrt(29) * Math.sqrt(30)), 6);
@@ -280,18 +333,28 @@ describe('BruteforceSearch', () => {
 
       beforeAll(() => {
         index.initIndex(4);
-        index.addPoint([1, 2, 3], 0);
-        index.addPoint([1, 2, 5], 1);
-        index.addPoint([1, 2, 4], 2);
-        index.addPoint([1, 2, 5], 3);
+        const vec1 = arrayToVector([1, 2, 3], new hnswlib.VectorFloat());
+        index.addPoint(vec1, 0);
+        vec1.delete();
+        const vec2 = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
+        index.addPoint(vec2, 1);
+        vec2.delete();
+        const vec3 = arrayToVector([1, 2, 4], new hnswlib.VectorFloat());
+        index.addPoint(vec3, 2);
+        vec3.delete();
+        const vec4 = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
+        index.addPoint(vec4, 3);
+        vec4.delete();
       });
 
       it('returns filtered search results', () => {
         const filter = (label: number) => label % 2 == 0;
-        expect(index.searchKnn([1, 2, 5], 4, filter)).toMatchObject({
+        const vec = arrayToVector([1, 2, 5], new hnswlib.VectorFloat());
+        expect(index.searchKnn(vec, 4, filter)).toMatchObject({
           distances: [1, 4],
           neighbors: [2, 0],
         });
+        vec.delete();
       });
     });
   });

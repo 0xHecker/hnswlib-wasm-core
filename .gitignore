@@ -4,5 +4,3 @@
 .DS_Store
 .yarn/cache
 .yarn/install-state.gz
-lib
-dist

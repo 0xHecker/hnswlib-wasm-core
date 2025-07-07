@@ -96,8 +96,8 @@
     "**/build/**/*": true,
     "**/debug/": true,
     "**/obj": true,
-    "**/dist": true,
-    "lib": true
+    "**/dist": false,
+    "lib": false
   },
   "explorerExclude.backup": {}
 }

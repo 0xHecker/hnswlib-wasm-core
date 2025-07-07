@@ -1,4 +1,4 @@
-import { IDBFS_STORE_NAME, defaultParams, hnswParamsForAda } from '../dist/hnswlib';
+import { defaultParams, hnswParamsForAda } from '../dist/hnswlib';
 
 export const testErrors = {
   indexSize: /The maximum number of elements has been reached in index/,
@@ -38,43 +38,6 @@ export const createVectorData = (numOfVec = 100, dimensions: number = hnswParams
   return { vectors, labels };
 };
 
-export type IdbFileData = {
-  timestamp: number;
-  mode: string;
-  contents: Uint8Array;
-};
-
-export const getIdbFileList = async (request: IDBOpenDBRequest): Promise<string[]> => {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => {
-      const db: IDBDatabase = request.result;
-      console.log('stores', db.objectStoreNames);
-      const transaction = db.transaction(IDBFS_STORE_NAME, 'readonly');
-      const fileDataStore = transaction.objectStore(IDBFS_STORE_NAME);
-
-      const fileList: string[] = [];
-      const cursorRequest = fileDataStore.openCursor();
-
-      cursorRequest.onsuccess = (event: Event) => {
-        const cursor: IDBCursorWithValue | null = (event.target as IDBRequest).result;
-        if (cursor) {
-          fileList.push(cursor.key.toString());
-          cursor.continue();
-        } else {
-          resolve(fileList);
-        }
-      };
-
-      cursorRequest.onerror = (event: Event) => {
-        reject(new Error('Error while retrieving file list from IDBFS.'));
-      };
-    };
-
-    request.onerror = (event: Event) => {
-      reject(new Error('Error while opening IndexedDB.'));
-    };
-  });
-};
 
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));

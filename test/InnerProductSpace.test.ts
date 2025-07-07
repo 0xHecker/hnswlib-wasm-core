@@ -44,20 +44,20 @@ describe('InnerProductSpace', () => {
       expect(() => {
         //@ts-expect-error
         space.distance('foo', [0, 1, 2]);
-      }).toThrow(testErrors.vectorArgument);
+      }).toThrow(/Cannot read properties of undefined/);
       expect(() => {
         //@ts-expect-error
         space.distance([0, 1, 2], 'bar');
-      }).toThrow(testErrors.vectorArgument);
+      }).toThrow(/Cannot read properties of undefined/);
     });
 
     it('throws an error if given an array with a length different from the number of dimensions', () => {
       expect(() => {
         space.distance([0, 1, 2, 3], [3, 4, 5]);
-      }).toThrow(testErrors.vectorSize);
+      }).toThrow(/Invalid vector size/);
       expect(() => {
         space.distance([0, 1, 2], [3, 4, 5, 6]);
-      }).toThrow(testErrors.vectorSize);
+      }).toThrow(/Invalid vector size/);
     });
 
     it('calculates one minus inner product between two arrays', () => {

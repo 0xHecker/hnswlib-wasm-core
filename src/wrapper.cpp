@@ -80,13 +80,15 @@ namespace emscripten {
       l2space_ = std::unique_ptr<hnswlib::L2Space>(new hnswlib::L2Space(static_cast<size_t>(dim_)));
     }
 
-    float distance(const std::vector<float>& vec_a, const std::vector<float>& vec_b) {
-      if (vec_a.size() != dim_ || vec_b.size() != dim_) {
+    float distance(const emscripten::val& vec_a, const emscripten::val& vec_b) {
+      const std::vector<float> a = emscripten::vecFromJSArray<float>(vec_a);
+      const std::vector<float> b = emscripten::vecFromJSArray<float>(vec_b);
+      if (a.size() != dim_ || b.size() != dim_) {
         printf("Invalid vector size. Must be equal to the dimension of the space. The dimension of the space is %d.\n", dim_);
         throw std::invalid_argument("Invalid vector size. Must be equal to the dimension of the space. The dimension of the space is " + std::to_string(this->dim_) + ".");
       }
       hnswlib::DISTFUNC<float> df = l2space_->get_dist_func();
-      return df(vec_a.data(), vec_b.data(), l2space_->get_dist_func_param());
+      return df(a.data(), b.data(), l2space_->get_dist_func_param());
     }
 
 
@@ -104,13 +106,15 @@ namespace emscripten {
       ipspace_ = std::unique_ptr<hnswlib::InnerProductSpace>(new hnswlib::InnerProductSpace(static_cast<size_t>(dim_)));
     }
 
-    float distance(const std::vector<float>& vec_a, const std::vector<float>& vec_b) {
-      if (vec_a.size() != dim_ || vec_b.size() != dim_) {
+    float distance(const emscripten::val& vec_a, const emscripten::val& vec_b) {
+      const std::vector<float> a = emscripten::vecFromJSArray<float>(vec_a);
+      const std::vector<float> b = emscripten::vecFromJSArray<float>(vec_b);
+      if (a.size() != dim_ || b.size() != dim_) {
         printf("Invalid vector size. Must be equal to the dimension of the space. The dimension of the space is %d.\n", dim_);
         throw std::invalid_argument("Invalid vector size. Must be equal to the dimension of the space. The dimension of the space is " + std::to_string(this->dim_));
       }
       hnswlib::DISTFUNC<float> df = ipspace_->get_dist_func();
-      const float d = df(vec_a.data(), vec_b.data(), ipspace_->get_dist_func_param());
+      const float d = df(a.data(), b.data(), ipspace_->get_dist_func_param());
       return d;
     }
 

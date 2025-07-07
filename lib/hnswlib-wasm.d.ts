@@ -1,3 +1,4 @@
+/***************** GENERATED FILE ********************/ 
 /**
  * hnswlib-node provides Node.js bindings for Hnswlib.
  *
@@ -354,3 +355,5 @@ export class VectorInt {
 
 declare const factory: EmscriptenModuleFactory<HnswlibModule>;
 export default factory;
+ 
+/***************** GENERATED FILE ********************/ 

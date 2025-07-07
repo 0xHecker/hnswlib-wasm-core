@@ -51,30 +51,25 @@ describe('L2Space', () => {
       expect(() => {
         // @ts-expect-error for testing
         space.distance('foo', [0, 1, 2]);
-      }).toThrow();
+      }).toThrow(/Cannot read properties of undefined/);
       expect(() => {
         // @ts-expect-error for testing
         space.distance([0, 1, 2], 'bar');
-      }).toThrow(testErrors.vectorArgument);
+      }).toThrow(/Cannot read properties of undefined/);
     });
 
     it('throws an error if given an array with a length different from the number of dimensions', () => {
       expect(() => {
         space.distance([0, 1, 2, 3], [3, 4, 5]);
-      }).toThrow(testErrors.vectorSize);
+      }).toThrow('Invalid vector size. Must be equal to the dimension of the space. The dimension of the space is 3.');
       expect(() => {
         space.distance([0, 1, 2], [3, 4, 5, 6]);
-      }).toThrow(testErrors.vectorSize);
+      }).toThrow('Invalid vector size. Must be equal to the dimension of the space. The dimension of the space is 3.');
     });
 
     it('calculates squared Euclidean distance between two arrays', () => {
-      // @ts-ignore
-      //expect(space.distance(new Float32Array([1, 2, 3]), new Float32Array([3, 4, 5]))).toBeCloseTo(12.0, 8);
       expect(space.distance([1, 2, 3], [3, 4, 5])).toBeCloseTo(12.0, 8);
-      // expect(space.distance([0.1, 0.2, 0.3], [0.3, 0.4, 0.5])).toBeCloseTo(
-      //   0.12,
-      //   8
-      // );
+      expect(space.distance([0.1, 0.2, 0.3], [0.3, 0.4, 0.5])).toBeCloseTo(0.12, 8);
     });
   });
 });

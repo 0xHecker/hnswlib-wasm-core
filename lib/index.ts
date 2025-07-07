@@ -1,3 +1,4 @@
+/***************** GENERATED FILE ********************/ 
 import type * as module from './hnswlib-wasm';
 import type factory from './hnswlib-wasm';
 // import './hnswlib.mjs';
@@ -119,3 +120,5 @@ export const loadHnswlib = async (): Promise<HnswlibModule> => {
 //   Module.asm.free(vecDataPtr);
 //   Module.asm.free(labelVecDataPtr);
 // };
+ 
+/***************** GENERATED FILE ********************/ 
