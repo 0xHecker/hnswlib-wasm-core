@@ -235,7 +235,7 @@ export class HierarchicalNSW {
    * @param {number} label The index of the datum point to be added.
    * @param {boolean} replaceDeleted The flag to replace a deleted element (default: false).
    */
-  addPoint(point: VectorFloat | number[], label: number, replaceDeleted: boolean): void;
+  addPoint(point: VectorFloat | number[], label: number, replaceDeleted?: boolean): void;
 
   /**
    * adds a datum point array to the search index.
@@ -243,14 +243,14 @@ export class HierarchicalNSW {
    * @param {VectorInt | number[]} labels The index array of the datum array to be added.
    * @param {boolean} replaceDeleted The flag to replace a deleted element (default: false).
    */
-  addPoints(items: VectorFloat[] | number[][], labels: VectorInt | number[], replaceDeleted: boolean): void;
+  addPoints(items: VectorFloat[] | number[][], labels: VectorInt | number[], replaceDeleted?: boolean): void;
 
   /**
    * Recommended approach to add items.  It will generate its own labels and has logic to reuse labels from deleted items.  It returns an ordered array of labels correspoinding to the items added.
    * @param {VectorFloat[] | number[][]} items The datum array to be added to the search index.
    * @param {boolean} replaceDeleted The flag to replace a deleted element (default: false).
    */
-  addItems(items: VectorFloat[] | number[][], replaceDeleted: boolean): VectorInt;
+  addItems(items: VectorFloat[] | number[][], replaceDeleted?: boolean): VectorInt;
 
   // /**
   //  * adds a datum point to the search index.

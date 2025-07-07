@@ -12,7 +12,7 @@ export const saveIndexToOpfs = async (index: HierarchicalNSW & { writeIndexToBuf
   await writable.close();
 };
 
-export const loadIndexFromOpfs = async (index: HierarchicalNSW & { readIndexFromBuffer: (buffer: Uint8Array) => void; initIndex: (maxElements: number) => void }, maxElements: number): Promise<void> => {
+export const loadIndexFromOpfs = async (index: HierarchicalNSW, maxElements: number): Promise<void> => {
   const root = await navigator.storage.getDirectory();
   try {
     const fileHandle = await root.getFileHandle(INDEX_FILE_NAME);
@@ -22,7 +22,7 @@ export const loadIndexFromOpfs = async (index: HierarchicalNSW & { readIndexFrom
   } catch (error) {
     if (error instanceof Error && error.name === 'NotFoundError') {
       // Index file doesn't exist, so we'll just initialize a new index.
-      index.initIndex(maxElements);
+      index.initIndex(maxElements, 16, 200, 100);
     } else {
       throw error;
     }

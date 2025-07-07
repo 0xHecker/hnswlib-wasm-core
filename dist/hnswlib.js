@@ -23,7 +23,10 @@ let __tla = (async () => {
           return lib;
       }
       if (!library) {
-        const factoryFunc = (await import("./hnswlib-e1b9e6eb.js")).default;
+        const factoryFunc = (await import("./hnswlib-c96e51e6.js").then(async (m) => {
+          await m.__tla;
+          return m;
+        })).default;
         library = await factoryFunc();
       }
       return library;

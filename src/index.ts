@@ -8,6 +8,7 @@ export type L2Space = module.L2Space;
 export type InnerProductSpace = module.InnerProductSpace;
 export type VectorFloat = module.VectorFloat;
 export type VectorInt = module.VectorInt;
+export type SearchResult = module.SearchResult;
 
 export type HnswModuleFactory = typeof factory;
 export type normalizePoint = HnswlibModule['normalizePoint'];
@@ -42,7 +43,7 @@ export const loadHnswlib = async (): Promise<HnswlibModule> => {
     }
 
     if (!library) {
-      const factoryFunc = (await import('./hnswlib.mjs')).default;
+      const factoryFunc = (await import('../lib/hnswlib.mjs')).default;
       library = (await factoryFunc()) as HnswlibModule;
     }
     return library;

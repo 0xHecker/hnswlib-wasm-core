@@ -14,7 +14,7 @@ CFLAGS += -s ASSERTIONS=1
 CFLAGS += -s SINGLE_FILE
 
 CFLAGS += --bind
-CFLAGS += -s ENVIRONMENT=web
+CFLAGS += -s ENVIRONMENT=web,node
 CFLAGS += -gsource-map
 
 
