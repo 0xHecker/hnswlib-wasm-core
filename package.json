@@ -1,6 +1,6 @@
 {
   "name": "hnswlib-wasm-core",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "typescript and wasm bindings for Hnswlib with storage agnostic",
   "module": "./dist/hnswlib.js",
   "types": "./dist/hnswlib.d.ts",
